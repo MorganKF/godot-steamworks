@@ -36,6 +36,7 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	PoolVector<uint8_t> make_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
 	Packet break_packet(const uint8_t *p_buffer, int p_buffer_size);
 
+	// Steam callbacks
 	void on_lobby_created(LobbyCreated_t *p_callback, bool p_io_failure);
 	CCallResult<SteamMessagingMultiplayerPeer, LobbyCreated_t> m_lobby_created_call_result;
 	

@@ -64,11 +64,6 @@ void SteamMessagingMultiplayerPeer::activate_invite_dialog() {
 	SteamFriends()->ActivateGameOverlayInviteDialog(*_lobby_id);
 };
 
-Error SteamMessagingMultiplayerPeer::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
-	// Todo
-	return OK;
-}
-
 PoolVector<uint8_t> SteamMessagingMultiplayerPeer::make_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
 	PoolVector<uint8_t> packet;
 	packet.resize(p_buffer_size + PROTO_SIZE);
@@ -114,6 +109,24 @@ void SteamMessagingMultiplayerPeer::on_lobby_created(LobbyCreated_t *p_callback,
 	}
 }
 
+Error SteamMessagingMultiplayerPeer::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
+	ERR_FAIL_COND_V_MSG(incoming_packets.size() == 0, ERR_UNAVAILABLE, "No incoming packets available.");
+
+	Packet packet = _packets.front()->get();
+	_packets.pop_front();
+
+	switch (packet.type) {
+		case PacketType::DATA: {
+			*r_buffer = packet.data;
+			r_buffer_size = packet.size;
+		} break;
+		case PacketType::HANDSHAKE: {
+		} break;
+	}
+
+	return OK;
+}
+
 Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_buffer_size) {
 	if (SteamNetworking() == nullptr) {
 		return ERR_UNAVAILABLE;
@@ -155,7 +168,8 @@ void SteamMessagingMultiplayerPeer::poll() {
 		const uint8_t * data = (uint8_t*)messages[i]->m_pData;
 		int size = messages[i]->m_cbSize;
 		auto packet = break_packet(data, size);
-		print_line(itos(packet.source));
+		_packets.push_back(packet);
+		print_line(itos(packet.source)); // Todo: Remove
 	}
 }
 
