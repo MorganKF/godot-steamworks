@@ -39,8 +39,9 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	// Steam callbacks
 	void on_lobby_created(LobbyCreated_t *p_callback, bool p_io_failure);
 	CCallResult<SteamMessagingMultiplayerPeer, LobbyCreated_t> m_lobby_created_call_result;
-	
-	// void on_lobby_enter();
+
+	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_lobby_created, LobbyCreated_t);
+	void on_lobby_enter(LobbyCreated_t* p_callback);
 
 protected:
 	static void _bind_methods();

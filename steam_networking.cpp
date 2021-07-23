@@ -173,6 +173,10 @@ void SteamMessagingMultiplayerPeer::poll() {
 	}
 }
 
+void SteamMessagingMultiplayerPeer::on_lobby_enter(LobbyCreated_t *p_callback) {
+	print_line("Player joined lobby!");
+}
+
 void SteamMessagingMultiplayerPeer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("create_server", "lobby_type", "max_players"), &SteamMessagingMultiplayerPeer::create_server);
 	ClassDB::bind_method(D_METHOD("activate_invite_dialog"), &SteamMessagingMultiplayerPeer::activate_invite_dialog);
