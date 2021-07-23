@@ -11,6 +11,7 @@ const int PROTO_SIZE = 9;
 class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer)
 
+
 	enum PacketType {
 		DATA,
 		HANDSHAKE,
@@ -33,14 +34,15 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	bool _refuse_connections;
 	ConnectionStatus _connection_status;
 	CSteamID* _lobby_id;
-	PoolVector<uint8_t> make_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
-	Packet break_packet(const uint8_t *p_buffer, int p_buffer_size);
+	PoolVector<uint8_t> make_network_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
+	Packet make_internal_packet(const uint8_t *p_buffer, int p_buffer_size);
 
 	// Steam callbacks
 	void on_lobby_created(LobbyCreated_t *p_callback, bool p_io_failure);
 	CCallResult<SteamMessagingMultiplayerPeer, LobbyCreated_t> m_lobby_created_call_result;
 
-	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_lobby_enter, LobbyCreated_t);
+	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_lobby_update, LobbyDataUpdate_t);
+	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_session_request, SteamNetworkingMessagesSessionRequest_t);
 
 protected:
 	static void _bind_methods();
@@ -54,9 +56,9 @@ public:
 
 	SteamMessagingMultiplayerPeer();
 	~SteamMessagingMultiplayerPeer() override;
-
 	void create_server(LobbyPrivacy p_lobby_type, int p_max_players);
-	// Error connect(CSteamID p_game_id);
+	Error join(uint64_t p_game_id);
+	void activate_invite_dialog();
 
 	/* NetworkedMultiplayerPeer */
 	void set_transfer_mode(TransferMode p_mode) override;
@@ -72,7 +74,6 @@ public:
 	/* PacketPeer */
 	int get_available_packet_count() const override;
 	int get_max_packet_size() const override;
-	void activate_invite_dialog();
 	Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override;
 	Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
 	void poll() override;

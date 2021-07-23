@@ -2,11 +2,12 @@
 #define GODOT_STEAMWORKS_H
 
 #include "core/reference.h"
-
-#include <steam/steamclientpublic.h>
+#include "steam/steam_api.h"
 
 class GodotSteamworks : public Reference {
 GDCLASS(GodotSteamworks, Reference)
+
+	STEAM_CALLBACK(GodotSteamworks, on_join_request, GameLobbyJoinRequested_t);
 
 protected:
 	static void _bind_methods();
