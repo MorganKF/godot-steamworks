@@ -6,12 +6,12 @@
 #include "steam/steam_api.h"
 
 const int CHANNEL = 0;
-const int PROTO_SIZE = 9;
 const int MESSAGE_LIMIT = 250;
 
 class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer)
 
+	const int PROTO_SIZE = sizeof(PacketType) + sizeof(uint32_t) + sizeof(int32_t);
 
 	enum PacketType {
 		DATA,

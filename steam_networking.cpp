@@ -9,6 +9,7 @@ SteamMessagingMultiplayerPeer::SteamMessagingMultiplayerPeer() :
 		_connection_status(CONNECTION_DISCONNECTED),
 		_lobby_id(nullptr) {
 		_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t) * 250);
+		
 }
 
 SteamMessagingMultiplayerPeer::~SteamMessagingMultiplayerPeer() {
@@ -68,9 +69,9 @@ void SteamMessagingMultiplayerPeer::activate_invite_dialog() {
 
 uint8_t* SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
 	uint8_t *packet = (uint8_t *)memalloc(p_buffer_size + PROTO_SIZE);
-	memcpy(&packet[0], &p_type, 1);
-	memcpy(&packet[1], &p_source, 4);
-	memcpy(&packet[5], &p_destination, 4);
+	memcpy(&packet[0], &p_type, sizeof(PacketType));
+	memcpy(&packet[sizeof(PacketType)], &p_source, sizeof(uint32_t));
+	memcpy(&packet[sizeof(PacketType) + sizeof(uint32_t)], &p_destination, sizeof(int32_t));
 	memcpy(&packet[PROTO_SIZE], p_buffer, p_buffer_size);
 	return packet;
 }
@@ -79,9 +80,9 @@ SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_intern
 	Packet packet{};
 	packet.size = p_buffer_size;
 	packet.data = (uint8_t *)(memalloc(packet.size));
-	memcpy(&packet.type, &p_buffer[0], 1);
-	memcpy(&packet.source, &p_buffer[1], 4);
-	memcpy(&packet.destination, &p_buffer[5], 4);
+	memcpy(&packet.type, &p_buffer[0], sizeof(PacketType));
+	memcpy(&packet.source, &p_buffer[sizeof(PacketType)], sizeof(uint32_t));
+	memcpy(&packet.destination, &p_buffer[sizeof(PacketType) + sizeof(uint32_t)], sizeof(int32_t));
 	memcpy(&packet.data, &p_buffer[PROTO_SIZE], p_buffer_size);
 	return packet;
 }
@@ -161,7 +162,7 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 
 	if (is_server()) {
 		if (_target_peer == 1) {
-			return OK; // Don't sent to self
+			return OK; // Don't send to self
 		} else if (_target_peer == 0) {
 			// Send to everyone
 			for (auto element = _peer_map.front(); element; element = element->next()) {
@@ -197,8 +198,9 @@ void SteamMessagingMultiplayerPeer::poll() {
 	for (auto i = 0; i < num_messages; i++) {
 		print_line("Got a packet");
 		// Unpack message
-		const uint8_t * data = (uint8_t*)_messages[i]->m_pData;
+		const uint8_t *data = (uint8_t *)_messages[i]->m_pData;
 		int size = _messages[i]->m_cbSize;
+		print_line(itos(size));
 		auto packet = make_internal_packet(data, size - PROTO_SIZE);
 
 		print_line(vformat("type: %d, source: %d, destination %d", packet.type, packet.source, packet.destination));
