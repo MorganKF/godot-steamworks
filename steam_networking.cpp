@@ -86,29 +86,31 @@ SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_intern
 	return packet;
 }
 
-void SteamMessagingMultiplayerPeer::create_server(LobbyPrivacy p_lobby_type, int p_max_players) {
+void SteamMessagingMultiplayerPeer::create_lobby(LobbyPrivacy p_lobby_type, int p_max_players) {
 	if (SteamMatchmaking() == nullptr) {
 		ERR_PRINT("SteamAPI has not been initialized!");
 		return;
 	}
 
-	_connection_status = CONNECTION_CONNECTING;
-
 	const SteamAPICall_t api_call = SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, p_max_players);
 	m_lobby_created_call_result.Set(api_call, this, &SteamMessagingMultiplayerPeer::on_lobby_created);
 }
 
-Error SteamMessagingMultiplayerPeer::join(uint64_t p_game_id) {
+void SteamMessagingMultiplayerPeer::start_server() {
+	_connection_status = CONNECTION_CONNECTING;
+	_peer_id = 1;
+	_refuse_connections = false;
+	_connection_status = CONNECTION_CONNECTED;
+	SteamMatchmaking()->SetLobbyGameServer(*_lobby_id, 0, 0, SteamUser()->GetSteamID());
+}
+
+Error SteamMessagingMultiplayerPeer::join_lobby(uint64_t p_game_id) {
 	if (SteamMatchmaking() == nullptr) {
 		ERR_PRINT("SteamAPI has not been initialized!");
 		return ERR_CANT_ACQUIRE_RESOURCE;
 	}
 
-	_connection_status = CONNECTION_CONNECTING;
-
 	SteamMatchmaking()->JoinLobby(CSteamID(p_game_id));
-
-	_connection_status = CONNECTION_CONNECTED;
 	return OK;
 }
 
@@ -119,9 +121,6 @@ void SteamMessagingMultiplayerPeer::on_lobby_created(LobbyCreated_t *p_callback,
 		_lobby_id = (CSteamID*)memalloc(sizeof(CSteamID));
 		*_lobby_id = CSteamID(p_callback->m_ulSteamIDLobby);
 		_server = true;
-		_peer_id = 1;
-		_refuse_connections = false;
-		_connection_status = CONNECTION_CONNECTED;
 	} else {
 		// Todo
 	}
@@ -131,17 +130,8 @@ Error SteamMessagingMultiplayerPeer::get_packet(const uint8_t **r_buffer, int &r
 	Packet packet = _packets.front()->get();
 	_packets.pop_front();
 
-	switch (packet.type) {
-		case PacketType::DATA: {
-			*r_buffer = packet.data;
-			r_buffer_size = packet.size;
-		} break;
-		case PacketType::HANDSHAKE: {
-			print_line("Got handshake packet!");
-			_peer_id = packet.destination;
-			r_buffer_size = 0;
-		} break;
-	}
+	*r_buffer = packet.data;
+	r_buffer_size = packet.size;
 
 	return OK;
 }
@@ -168,7 +158,7 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 
 	if (is_server()) {
 		if (_target_peer == 1) {
-			return OK; // Don't sent so self
+			return OK; // Don't sent to self
 		} else if (_target_peer == 0) {
 			// Send to everyone
 		} else if (_target_peer < 0) {
@@ -182,6 +172,7 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 			}
 		}
 	} else {
+		// We are a client so messages can only go to the server
 		const auto result = SteamNetworkingMessages()->SendMessageToUser(_peer_map[1], &packet, p_buffer_size, flags, CHANNEL);
 
 		if (result == k_EResultNoConnection) {
@@ -193,15 +184,58 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 }
 
 void SteamMessagingMultiplayerPeer::poll() {
+	// Get lastest network messages
 	SteamNetworkingMessage_t **messages = (SteamNetworkingMessage_t**)memalloc(sizeof(SteamNetworkingMessage_t) * 250);
 	int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(CHANNEL, messages, 250);
 
 	for (auto i = 0; i < num_messages; i++) {
+		// Unpack message
 		const uint8_t * data = (uint8_t*)messages[i]->m_pData;
 		int size = messages[i]->m_cbSize;
 		auto packet = make_internal_packet(data, size);
-		_packets.push_back(packet);
-		print_line(itos(packet.source)); // Todo: Remove
+
+		switch (packet.type) {
+			case PacketType::DATA: {
+				_packets.push_back(packet); // Normal Godot packets
+			} break;
+
+			// Used to set client unique ids
+			case PacketType::SYS_SET_ID: {
+				if (packet.source == 1) {
+					emit_signal("connection_succeeded");
+					emit_signal("peer_connected", packet.destination);
+					_peer_id = packet.destination;
+				}
+			} break;
+
+			// Initializes internal data for server peers
+			case PacketType::SYS_INIT: {
+				if (_server) {
+					print_line("Player connected!");
+					// Generate ID
+					int id;
+					if (_peer_map.size() == 0) {
+						id = 2;
+					} else {
+						id = _peer_map.back()->key() + 1;
+					}
+					_peer_map[id] = messages[i]->m_identityPeer;
+
+					// Emit Godot signals
+					emit_signal("peer_connected", id);
+					emit_signal("connected_to_server");
+
+					// Send ID to new peer
+					auto packet = make_network_packet(SYS_SET_ID, _peer_id, id, nullptr, 0); // Will this work?
+					SteamNetworkingMessages()->SendMessageToUser(messages[i]->m_identityPeer, &packet, 0, k_nSteamNetworkingSend_Reliable, CHANNEL);
+				} else {
+					WARN_PRINT("GOT SIS_INIT FROM PLAYER?");
+				}
+			} break;
+		}
+
+		// Free steam data
+		messages[i]->Release();
 	}
 }
 
@@ -209,23 +243,37 @@ void SteamMessagingMultiplayerPeer::on_lobby_update(LobbyDataUpdate_t *p_callbac
 	CSteamID id = CSteamID(p_callback->m_ulSteamIDMember);
 	
 	if (_server && id != *_lobby_id) {
-		print_line("Player joined!");
+		print_line("Player joined lobby!");
 		print_line(itos(id.ConvertToUint64()));
 	}
 
 	if (!_server && id.IsLobby() && _lobby_id == nullptr) {
+		_lobby_id = (CSteamID *)memalloc(sizeof(CSteamID));
+		*_lobby_id = id;
 		print_line("Joined a lobby!");
 	}
 }
 
-void SteamMessagingMultiplayerPeer::on_session_request(SteamNetworkingMessagesSessionRequest_t* p_callback) {
+void SteamMessagingMultiplayerPeer::on_session_request(SteamNetworkingMessagesSessionRequest_t *p_callback) {
 	print_line(vformat("Session request from: %i", p_callback->m_identityRemote.GetSteamID64()));
+	if (!_refuse_connections) {
+		
+	}
+}
+
+void SteamMessagingMultiplayerPeer::on_game_created(LobbyGameCreated_t* p_callback) {
+	// Todo: check if steam id is actually set
+	auto packet = make_network_packet(SYS_INIT, 0, 1, nullptr, 0); // Will this work?
+	auto id = SteamNetworkingIdentity();
+	id.SetSteamID64(p_callback->m_ulSteamIDGameServer);
+	SteamNetworkingMessages()->SendMessageToUser(id, &packet, 0, k_nSteamNetworkingSend_Reliable, CHANNEL);
 }
 
 void SteamMessagingMultiplayerPeer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("create_server", "lobby_type", "max_players"), &SteamMessagingMultiplayerPeer::create_server);
-	ClassDB::bind_method(D_METHOD("join"), &SteamMessagingMultiplayerPeer::join);
+	ClassDB::bind_method(D_METHOD("create_lobby", "lobby_type", "max_players"), &SteamMessagingMultiplayerPeer::create_lobby);
+	ClassDB::bind_method(D_METHOD("join_lobby"), &SteamMessagingMultiplayerPeer::join_lobby);
 	ClassDB::bind_method(D_METHOD("activate_invite_dialog"), &SteamMessagingMultiplayerPeer::activate_invite_dialog);
+	ClassDB::bind_method(D_METHOD("start_server"), &SteamMessagingMultiplayerPeer::start_server);
 
 	BIND_ENUM_CONSTANT(LobbyPrivacy::OPEN);
 	BIND_ENUM_CONSTANT(LobbyPrivacy::FRIENDS);

@@ -14,7 +14,8 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 
 	enum PacketType {
 		DATA,
-		HANDSHAKE,
+		SYS_INIT,
+		SYS_SET_ID
 	};
 
 	struct Packet {
@@ -43,6 +44,7 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 
 	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_lobby_update, LobbyDataUpdate_t);
 	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_session_request, SteamNetworkingMessagesSessionRequest_t);
+	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_game_created, LobbyGameCreated_t);
 
 protected:
 	static void _bind_methods();
@@ -56,8 +58,9 @@ public:
 
 	SteamMessagingMultiplayerPeer();
 	~SteamMessagingMultiplayerPeer() override;
-	void create_server(LobbyPrivacy p_lobby_type, int p_max_players);
-	Error join(uint64_t p_game_id);
+	void create_lobby(LobbyPrivacy p_lobby_type, int p_max_players);
+	void start_server();
+	Error join_lobby(uint64_t p_game_id);
 	void activate_invite_dialog();
 
 	/* NetworkedMultiplayerPeer */
