@@ -6,7 +6,7 @@
 #include "steam/steam_api.h"
 
 const int CHANNEL = 0;
-const int MESSAGE_LIMIT = 250;
+const int MESSAGE_LIMIT = 60;
 
 class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer)

@@ -8,7 +8,7 @@ SteamMessagingMultiplayerPeer::SteamMessagingMultiplayerPeer() :
 		_refuse_connections(true),
 		_connection_status(CONNECTION_DISCONNECTED),
 		_lobby_id(nullptr) {
-		_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t) * 250);
+		_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t) * MESSAGE_LIMIT);
 		
 }
 
@@ -193,7 +193,7 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 
 void SteamMessagingMultiplayerPeer::poll() {
 	// Get lastest network messages
-	int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(CHANNEL, _messages, 250);
+	int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(CHANNEL, _messages, MESSAGE_LIMIT);
 
 	for (auto i = 0; i < num_messages; i++) {
 		print_line("Got a packet");
