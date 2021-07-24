@@ -66,7 +66,7 @@ void SteamMessagingMultiplayerPeer::activate_invite_dialog() {
 	SteamFriends()->ActivateGameOverlayInviteDialog(*_lobby_id);
 };
 
-uint8_t* SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
+uint8_t* SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
 	uint8_t *packet = (uint8_t *)memalloc(p_buffer_size + PROTO_SIZE);
 	memcpy(&packet[0], &p_type, 1);
 	memcpy(&packet[1], &p_source, 4);
