@@ -86,6 +86,7 @@ SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_intern
 	return packet;
 }
 
+// Creates steam lobby
 void SteamMessagingMultiplayerPeer::create_lobby(LobbyPrivacy p_lobby_type, int p_max_players) {
 	if (SteamMatchmaking() == nullptr) {
 		ERR_PRINT("SteamAPI has not been initialized!");
@@ -96,20 +97,21 @@ void SteamMessagingMultiplayerPeer::create_lobby(LobbyPrivacy p_lobby_type, int 
 	m_lobby_created_call_result.Set(api_call, this, &SteamMessagingMultiplayerPeer::on_lobby_created);
 }
 
+// Moves lobby to server
 void SteamMessagingMultiplayerPeer::start_server() {
-	_connection_status = CONNECTION_CONNECTING;
 	_peer_id = 1;
 	_refuse_connections = false;
 	_connection_status = CONNECTION_CONNECTED;
 	SteamMatchmaking()->SetLobbyGameServer(*_lobby_id, 0, 0, SteamUser()->GetSteamID());
 }
 
+// Connectes client to server
 Error SteamMessagingMultiplayerPeer::join_lobby(uint64_t p_game_id) {
 	if (SteamMatchmaking() == nullptr) {
 		ERR_PRINT("SteamAPI has not been initialized!");
 		return ERR_CANT_ACQUIRE_RESOURCE;
 	}
-
+	_connection_status = CONNECTION_CONNECTED;
 	SteamMatchmaking()->JoinLobby(CSteamID(p_game_id));
 	return OK;
 }
@@ -202,9 +204,11 @@ void SteamMessagingMultiplayerPeer::poll() {
 			// Used to set client unique ids
 			case PacketType::SYS_SET_ID: {
 				if (packet.source == 1) {
+					print_line("Got ID from server!");
 					emit_signal("connection_succeeded");
 					emit_signal("peer_connected", packet.destination);
 					_peer_id = packet.destination;
+					_connection_status = CONNECTION_CONNECTED;
 				}
 			} break;
 
