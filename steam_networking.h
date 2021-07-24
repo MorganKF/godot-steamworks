@@ -28,8 +28,8 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	};
 	
 	bool _server;
-	int _target_peer;
-	int _peer_id;
+	int32_t _target_peer;
+	uint32_t _peer_id;
 	TransferMode _transfer_mode;
 	Map<int, SteamNetworkingIdentity> _peer_map;
 	List<Packet> _packets;

@@ -8,7 +8,7 @@ SteamMessagingMultiplayerPeer::SteamMessagingMultiplayerPeer() :
 		_refuse_connections(true),
 		_connection_status(CONNECTION_DISCONNECTED),
 		_lobby_id(nullptr) {
-	_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t) * 250);
+		_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t) * 250);
 }
 
 SteamMessagingMultiplayerPeer::~SteamMessagingMultiplayerPeer() {
@@ -157,28 +157,30 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 		}
 	}
 
+	auto size = p_buffer_size + PROTO_SIZE;
+
 	if (is_server()) {
 		if (_target_peer == 1) {
 			return OK; // Don't sent to self
 		} else if (_target_peer == 0) {
 			// Send to everyone
 			for (auto element = _peer_map.front(); element; element = element->next()) {
-				SteamNetworkingMessages()->SendMessageToUser(element->value(), packet, p_buffer_size, flags, CHANNEL);
+				SteamNetworkingMessages()->SendMessageToUser(element->value(), packet, size, flags, CHANNEL);
 			}
 		} else if (_target_peer < 0) {
 			// Send to all excluding one
 			for (auto element = _peer_map.front(); element; element = element->next()) {
 				if (element->key() != -_target_peer) {
-					SteamNetworkingMessages()->SendMessageToUser(element->value(), packet, p_buffer_size, flags, CHANNEL);
+					SteamNetworkingMessages()->SendMessageToUser(element->value(), packet, size, flags, CHANNEL);
 				}
 			}
 		} else {
 			// Send to target
-			SteamNetworkingMessages()->SendMessageToUser(_peer_map[_target_peer], packet, p_buffer_size, flags, CHANNEL);
+			SteamNetworkingMessages()->SendMessageToUser(_peer_map[_target_peer], packet, size, flags, CHANNEL);
 		}
 	} else {
 		// We are a client so messages can only go to the server
-		const auto result = SteamNetworkingMessages()->SendMessageToUser(_peer_map[1], packet, p_buffer_size, flags, CHANNEL);
+		const auto result = SteamNetworkingMessages()->SendMessageToUser(_peer_map[1], packet, size, flags, CHANNEL);
 
 		if (result == k_EResultNoConnection) {
 			return ERR_CANT_CONNECT;
@@ -197,7 +199,7 @@ void SteamMessagingMultiplayerPeer::poll() {
 		// Unpack message
 		const uint8_t * data = (uint8_t*)_messages[i]->m_pData;
 		int size = _messages[i]->m_cbSize;
-		auto packet = make_internal_packet(data, size);
+		auto packet = make_internal_packet(data, size - PROTO_SIZE);
 
 		print_line(vformat("type: %d, source: %d, destination %d", packet.type, packet.source, packet.destination));
 
@@ -238,7 +240,7 @@ void SteamMessagingMultiplayerPeer::poll() {
 
 					// Send ID to new peer
 					auto packet = make_network_packet(SYS_SET_ID, _peer_id, id, nullptr, 0);
-					SteamNetworkingMessages()->SendMessageToUser(_messages[i]->m_identityPeer, &packet, 0, k_nSteamNetworkingSend_Reliable, CHANNEL);
+					SteamNetworkingMessages()->SendMessageToUser(_messages[i]->m_identityPeer, &packet, PROTO_SIZE, k_nSteamNetworkingSend_Reliable, CHANNEL);
 				} else {
 					WARN_PRINT("GOT SIS_INIT FROM PLAYER?");
 				}
@@ -277,7 +279,7 @@ void SteamMessagingMultiplayerPeer::on_game_created(LobbyGameCreated_t* p_callba
 		auto id = SteamNetworkingIdentity();
 		id.SetSteamID64(p_callback->m_ulSteamIDGameServer);
 		_peer_map[1] = id;
-		SteamNetworkingMessages()->SendMessageToUser(id, &packet, 0, k_nSteamNetworkingSend_Reliable, CHANNEL);
+		SteamNetworkingMessages()->SendMessageToUser(id, &packet, PROTO_SIZE, k_nSteamNetworkingSend_Reliable, CHANNEL);
 	}
 }
 
