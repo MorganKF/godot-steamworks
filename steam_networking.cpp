@@ -253,6 +253,11 @@ void SteamMessagingMultiplayerPeer::on_lobby_enter(LobbyEnter_t *p_callback) {
 		}
 		*_lobby_id = CSteamID(p_callback->m_ulSteamIDLobby);
 	}
+	emit_signal("lobby_joined");
+}
+
+void SteamMessagingMultiplayerPeer::on_lobby_updated(LobbyDataUpdate_t *p_callback) {
+	emit_signal("lobby_updated");
 }
 
 void SteamMessagingMultiplayerPeer::on_session_request(SteamNetworkingMessagesSessionRequest_t *p_callback) {
@@ -277,6 +282,9 @@ void SteamMessagingMultiplayerPeer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("join_lobby"), &SteamMessagingMultiplayerPeer::join_lobby);
 	ClassDB::bind_method(D_METHOD("activate_invite_dialog"), &SteamMessagingMultiplayerPeer::activate_invite_dialog);
 	ClassDB::bind_method(D_METHOD("start_server"), &SteamMessagingMultiplayerPeer::start_server);
+
+	ADD_SIGNAL(MethodInfo("lobby_joined"));
+	ADD_SIGNAL(MethodInfo("lobby_updated"));
 
 	BIND_ENUM_CONSTANT(LobbyPrivacy::OPEN);
 	BIND_ENUM_CONSTANT(LobbyPrivacy::FRIENDS);
