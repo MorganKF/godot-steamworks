@@ -70,7 +70,7 @@ uint8_t* SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, u
 	uint8_t *packet = (uint8_t *)memalloc(p_buffer_size + PROTO_SIZE);
 	memcpy(&packet[0], &p_type, 1);
 	memcpy(&packet[1], &p_source, 4);
-	memcpy(&packet[1], &p_destination, 4);
+	memcpy(&packet[5], &p_destination, 4);
 	memcpy(&packet[PROTO_SIZE], p_buffer, p_buffer_size);
 	return packet;
 }
@@ -81,7 +81,7 @@ SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_intern
 	packet.data = (uint8_t *)(memalloc(packet.size));
 	memcpy(&packet.type, &p_buffer[0], 1);
 	memcpy(&packet.source, &p_buffer[1], 4);
-	memcpy(&packet.destination, &p_buffer[4], 4);
+	memcpy(&packet.destination, &p_buffer[5], 4);
 	memcpy(&packet.data, &p_buffer[PROTO_SIZE], p_buffer_size);
 	return packet;
 }
