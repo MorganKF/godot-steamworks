@@ -93,6 +93,7 @@ void SteamMessagingMultiplayerPeer::create_lobby(LobbyPrivacy p_lobby_type, int 
 		return;
 	}
 
+	_connection_status = CONNECTION_CONNECTING;
 	const SteamAPICall_t api_call = SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, p_max_players);
 	m_lobby_created_call_result.Set(api_call, this, &SteamMessagingMultiplayerPeer::on_lobby_created);
 }
@@ -261,16 +262,18 @@ void SteamMessagingMultiplayerPeer::on_lobby_update(LobbyDataUpdate_t *p_callbac
 void SteamMessagingMultiplayerPeer::on_session_request(SteamNetworkingMessagesSessionRequest_t *p_callback) {
 	print_line(vformat("Session request from: %i", p_callback->m_identityRemote.GetSteamID64()));
 	if (!_refuse_connections) {
-		
+		SteamNetworkingMessages()->AcceptSessionWithUser(p_callback->m_identityRemote);
 	}
 }
 
 void SteamMessagingMultiplayerPeer::on_game_created(LobbyGameCreated_t* p_callback) {
 	// Todo: check if steam id is actually set
-	auto packet = make_network_packet(SYS_INIT, 0, 1, nullptr, 0); // Will this work?
-	auto id = SteamNetworkingIdentity();
-	id.SetSteamID64(p_callback->m_ulSteamIDGameServer);
-	SteamNetworkingMessages()->SendMessageToUser(id, &packet, 0, k_nSteamNetworkingSend_Reliable, CHANNEL);
+	if (!_server) {
+		auto packet = make_network_packet(SYS_INIT, 0, 1, nullptr, 0); // Will this work?
+		auto id = SteamNetworkingIdentity();
+		id.SetSteamID64(p_callback->m_ulSteamIDGameServer);
+		SteamNetworkingMessages()->SendMessageToUser(id, &packet, 0, k_nSteamNetworkingSend_Reliable, CHANNEL);
+	}
 }
 
 void SteamMessagingMultiplayerPeer::_bind_methods() {
