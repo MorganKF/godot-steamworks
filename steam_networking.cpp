@@ -164,15 +164,19 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 			return OK; // Don't sent to self
 		} else if (_target_peer == 0) {
 			// Send to everyone
+			for (auto element = _peer_map.front(); element; element = element->next()) {
+				SteamNetworkingMessages()->SendMessageToUser(element->value(), &packet, p_buffer_size, flags, CHANNEL);
+			}
 		} else if (_target_peer < 0) {
 			// Send to all excluding one
+			for (auto element = _peer_map.front(); element; element = element->next()) {
+				if (element->key() != -_target_peer) {
+				SteamNetworkingMessages()->SendMessageToUser(element->value(), &packet, p_buffer_size, flags, CHANNEL);
+				}
+			}
 		} else {
 			// Send to target
-			const auto result = SteamNetworkingMessages()->SendMessageToUser(_peer_map[_target_peer], &packet, p_buffer_size, flags, CHANNEL);
-
-			if (result == k_EResultNoConnection) {
-				return ERR_CANT_CONNECT;
-			}
+			SteamNetworkingMessages()->SendMessageToUser(_peer_map[_target_peer], &packet, p_buffer_size, flags, CHANNEL);
 		}
 	} else {
 		// We are a client so messages can only go to the server
@@ -216,7 +220,6 @@ void SteamMessagingMultiplayerPeer::poll() {
 			// Initializes internal data for server peers
 			case PacketType::SYS_INIT: {
 				if (_server) {
-					print_line("Player connected!");
 					// Generate ID
 					int id;
 					if (_peer_map.size() == 0) {
@@ -244,23 +247,16 @@ void SteamMessagingMultiplayerPeer::poll() {
 	}
 }
 
-void SteamMessagingMultiplayerPeer::on_lobby_update(LobbyDataUpdate_t *p_callback) {
-	CSteamID id = CSteamID(p_callback->m_ulSteamIDMember);
-	
-	if (_server && id != *_lobby_id) {
-		print_line("Player joined lobby!");
-		print_line(itos(id.ConvertToUint64()));
-	}
-
-	if (!_server && id.IsLobby() && _lobby_id == nullptr) {
-		_lobby_id = (CSteamID *)memalloc(sizeof(CSteamID));
-		*_lobby_id = id;
-		print_line("Joined a lobby!");
+void SteamMessagingMultiplayerPeer::on_lobby_enter(LobbyEnter_t *p_callback) {
+	if (!_server) {
+		if (_lobby_id == nullptr) {
+			_lobby_id = (CSteamID *)memalloc(sizeof(CSteamID));
+		}
+		*_lobby_id = CSteamID(p_callback->m_ulSteamIDLobby);
 	}
 }
 
 void SteamMessagingMultiplayerPeer::on_session_request(SteamNetworkingMessagesSessionRequest_t *p_callback) {
-	print_line(vformat("Session request from: %i", p_callback->m_identityRemote.GetSteamID64()));
 	if (!_refuse_connections) {
 		SteamNetworkingMessages()->AcceptSessionWithUser(p_callback->m_identityRemote);
 	}
@@ -269,9 +265,10 @@ void SteamMessagingMultiplayerPeer::on_session_request(SteamNetworkingMessagesSe
 void SteamMessagingMultiplayerPeer::on_game_created(LobbyGameCreated_t* p_callback) {
 	// Todo: check if steam id is actually set
 	if (!_server) {
-		auto packet = make_network_packet(SYS_INIT, 0, 1, nullptr, 0); // Will this work?
+		auto packet = make_network_packet(SYS_INIT, 0, 1, nullptr, 0);
 		auto id = SteamNetworkingIdentity();
 		id.SetSteamID64(p_callback->m_ulSteamIDGameServer);
+		_peer_map[1] = id;
 		SteamNetworkingMessages()->SendMessageToUser(id, &packet, 0, k_nSteamNetworkingSend_Reliable, CHANNEL);
 	}
 }
