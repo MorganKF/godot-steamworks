@@ -37,7 +37,7 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	ConnectionStatus _connection_status;
 	CSteamID* _lobby_id;
 	SteamNetworkingMessage_t **_messages;
-	PoolVector<uint8_t> make_network_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
+	uint8_t* make_network_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
 	Packet make_internal_packet(const uint8_t *p_buffer, int p_buffer_size);
 
 	// Steam callbacks

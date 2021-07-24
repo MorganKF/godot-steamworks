@@ -66,14 +66,12 @@ void SteamMessagingMultiplayerPeer::activate_invite_dialog() {
 	SteamFriends()->ActivateGameOverlayInviteDialog(*_lobby_id);
 };
 
-PoolVector<uint8_t> SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
-	PoolVector<uint8_t> packet;
-	packet.resize(p_buffer_size + PROTO_SIZE);
-	const auto writer = packet.write();
-	memcpy(&writer[0], &p_type, 1);
-	memcpy(&writer[1], &p_source, 4);
-	memcpy(&writer[1], &p_destination, 4);
-	memcpy(&writer[PROTO_SIZE], p_buffer, p_buffer_size);
+uint8_t* SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, uint32_t p_source, uint32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
+	uint8_t *packet = (uint8_t *)memalloc(p_buffer_size + PROTO_SIZE);
+	memcpy(&packet[0], &p_type, 1);
+	memcpy(&packet[1], &p_source, 4);
+	memcpy(&packet[1], &p_destination, 4);
+	memcpy(&packet[PROTO_SIZE], p_buffer, p_buffer_size);
 	return packet;
 }
 
@@ -81,7 +79,7 @@ SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_intern
 	Packet packet{};
 	packet.size = p_buffer_size;
 	packet.data = (uint8_t *)(memalloc(packet.size));
-	memcpy(&packet.type, p_buffer, 1);
+	memcpy(&packet.type, &p_buffer[0], 1);
 	memcpy(&packet.source, &p_buffer[1], 4);
 	memcpy(&packet.destination, &p_buffer[4], 4);
 	memcpy(&packet.data, &p_buffer[PROTO_SIZE], p_buffer_size);
@@ -144,7 +142,7 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 		return ERR_UNAVAILABLE;
 	}
 
-	PoolVector<uint8_t> packet = make_network_packet(DATA, get_unique_id(), _target_peer, p_buffer, p_buffer_size);
+	uint8_t* packet = make_network_packet(DATA, get_unique_id(), _target_peer, p_buffer, p_buffer_size);
 
 	int flags = 0;
 	switch (_transfer_mode) {
@@ -165,22 +163,22 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 		} else if (_target_peer == 0) {
 			// Send to everyone
 			for (auto element = _peer_map.front(); element; element = element->next()) {
-				SteamNetworkingMessages()->SendMessageToUser(element->value(), &packet, p_buffer_size, flags, CHANNEL);
+				SteamNetworkingMessages()->SendMessageToUser(element->value(), packet, p_buffer_size, flags, CHANNEL);
 			}
 		} else if (_target_peer < 0) {
 			// Send to all excluding one
 			for (auto element = _peer_map.front(); element; element = element->next()) {
 				if (element->key() != -_target_peer) {
-					SteamNetworkingMessages()->SendMessageToUser(element->value(), &packet, p_buffer_size, flags, CHANNEL);
+					SteamNetworkingMessages()->SendMessageToUser(element->value(), packet, p_buffer_size, flags, CHANNEL);
 				}
 			}
 		} else {
 			// Send to target
-			SteamNetworkingMessages()->SendMessageToUser(_peer_map[_target_peer], &packet, p_buffer_size, flags, CHANNEL);
+			SteamNetworkingMessages()->SendMessageToUser(_peer_map[_target_peer], packet, p_buffer_size, flags, CHANNEL);
 		}
 	} else {
 		// We are a client so messages can only go to the server
-		const auto result = SteamNetworkingMessages()->SendMessageToUser(_peer_map[1], &packet, p_buffer_size, flags, CHANNEL);
+		const auto result = SteamNetworkingMessages()->SendMessageToUser(_peer_map[1], packet, p_buffer_size, flags, CHANNEL);
 
 		if (result == k_EResultNoConnection) {
 			return ERR_CANT_CONNECT;
@@ -201,6 +199,8 @@ void SteamMessagingMultiplayerPeer::poll() {
 		int size = _messages[i]->m_cbSize;
 		auto packet = make_internal_packet(data, size);
 
+		print_line(vformat("type: %d, source: %d, destination %d", packet.type, packet.source, packet.destination));
+
 		switch (packet.type) {
 			case PacketType::DATA: {
 				_packets.push_back(packet); // Normal Godot packets
@@ -208,6 +208,7 @@ void SteamMessagingMultiplayerPeer::poll() {
 
 			// Used to set client unique ids
 			case PacketType::SYS_SET_ID: {
+				print_line(itos(packet.source));
 				if (packet.source == 1) {
 					emit_signal("connection_succeeded");
 					emit_signal("peer_connected", packet.destination);
@@ -219,6 +220,7 @@ void SteamMessagingMultiplayerPeer::poll() {
 			// Initializes internal data for server peers
 			case PacketType::SYS_INIT: {
 				if (_server) {
+					print_line("Genereating new player ID");
 					// Generate ID
 					int id;
 					if (_peer_map.size() == 0) {
@@ -231,6 +233,8 @@ void SteamMessagingMultiplayerPeer::poll() {
 					// Emit Godot signals
 					emit_signal("peer_connected", id);
 					emit_signal("connected_to_server");
+
+					print_line(itos(_messages[i]->m_identityPeer.GetSteamID64()));
 
 					// Send ID to new peer
 					auto packet = make_network_packet(SYS_SET_ID, _peer_id, id, nullptr, 0);
