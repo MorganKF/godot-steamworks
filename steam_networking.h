@@ -24,7 +24,7 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 		uint32_t source;
 		int32_t destination;
 		uint8_t *data;
-		uint32_t size;
+		int size;
 	};
 	
 	bool _server;

@@ -82,7 +82,7 @@ SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_intern
 	memcpy(&packet.type, &p_buffer[0], sizeof(PacketType));
 	memcpy(&packet.source, &p_buffer[sizeof(PacketType)], sizeof(uint32_t));
 	memcpy(&packet.destination, &p_buffer[sizeof(PacketType) + sizeof(uint32_t)], sizeof(int32_t));
-	memcpy(&packet.data, &p_buffer[PROTO_SIZE], p_buffer_size);
+	memcpy(packet.data, &p_buffer[PROTO_SIZE], p_buffer_size);
 	return packet;
 }
 
@@ -119,7 +119,9 @@ Error SteamMessagingMultiplayerPeer::join_lobby(uint64_t p_game_id) {
 
 void SteamMessagingMultiplayerPeer::on_lobby_created(LobbyCreated_t *p_callback, bool p_io_failure) {
 	if (p_callback->m_eResult == k_EResultOK) {
-		_lobby_id = (CSteamID*)memalloc(sizeof(CSteamID));
+		if (_lobby_id == nullptr) {
+			_lobby_id = (CSteamID *)memalloc(sizeof(CSteamID));
+		}
 		*_lobby_id = CSteamID(p_callback->m_ulSteamIDLobby);
 		_server = true;
 	} else {
@@ -130,6 +132,10 @@ void SteamMessagingMultiplayerPeer::on_lobby_created(LobbyCreated_t *p_callback,
 Error SteamMessagingMultiplayerPeer::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
 	Packet packet = _packets.front()->get();
 	_packets.pop_front();
+
+	r_buffer_size = 0;
+
+	// Todo: fix possible memory leak
 
 	*r_buffer = packet.data;
 	r_buffer_size = packet.size;
