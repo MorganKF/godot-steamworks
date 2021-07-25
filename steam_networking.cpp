@@ -9,7 +9,6 @@ SteamMessagingMultiplayerPeer::SteamMessagingMultiplayerPeer() :
 		_connection_status(CONNECTION_DISCONNECTED),
 		_lobby_id(nullptr) {
 		_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t*) * MESSAGE_LIMIT);
-		
 }
 
 SteamMessagingMultiplayerPeer::~SteamMessagingMultiplayerPeer() {
@@ -196,14 +195,10 @@ void SteamMessagingMultiplayerPeer::poll() {
 	int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(CHANNEL, _messages, MESSAGE_LIMIT);
 
 	for (auto i = 0; i < num_messages; i++) {
-		print_line("Got a packet");
 		// Unpack message
 		const uint8_t *data = (uint8_t *)_messages[i]->m_pData;
 		int size = _messages[i]->m_cbSize;
-		print_line(itos(size));
 		auto packet = make_internal_packet(data, size - PROTO_SIZE);
-
-		print_line(vformat("type: %d, source: %d, destination %d", packet.type, packet.source, packet.destination));
 
 		switch (packet.type) {
 			case PacketType::DATA: {
@@ -212,7 +207,6 @@ void SteamMessagingMultiplayerPeer::poll() {
 
 			// Used to set client unique ids
 			case PacketType::SYS_SET_ID: {
-				print_line(itos(packet.source));
 				if (packet.source == 1) {
 					emit_signal("connection_succeeded");
 					emit_signal("peer_connected", packet.destination);
@@ -224,7 +218,6 @@ void SteamMessagingMultiplayerPeer::poll() {
 			// Initializes internal data for server peers
 			case PacketType::SYS_INIT: {
 				if (_server) {
-					print_line("Genereating new player ID");
 					// Generate ID
 					int id;
 					if (_peer_map.size() == 0) {
@@ -237,8 +230,6 @@ void SteamMessagingMultiplayerPeer::poll() {
 					// Emit Godot signals
 					emit_signal("peer_connected", id);
 					emit_signal("connected_to_server");
-
-					print_line(itos(_messages[i]->m_identityPeer.GetSteamID64()));
 
 					// Send ID to new peer
 					auto packet = make_network_packet(SYS_SET_ID, _peer_id, id, nullptr, 0);
