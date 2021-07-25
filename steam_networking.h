@@ -9,7 +9,7 @@ const int CHANNEL = 0;
 const int MESSAGE_LIMIT = 60;
 
 class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
-	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer)
+	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer);
 
 	const int PROTO_SIZE = sizeof(PacketType) + sizeof(uint32_t) + sizeof(int32_t);
 
