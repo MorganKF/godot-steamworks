@@ -40,10 +40,11 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	uint8_t* make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
 	Packet make_internal_packet(const uint8_t *p_buffer, int p_buffer_size);
 
-	// Steam callbacks
+	// Steam call results
 	void on_lobby_created(LobbyCreated_t *p_callback, bool p_io_failure);
 	CCallResult<SteamMessagingMultiplayerPeer, LobbyCreated_t> m_lobby_created_call_result;
 
+	// Steam callbacks
 	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_session_request, SteamNetworkingMessagesSessionRequest_t);
 	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_lobby_enter, LobbyEnter_t);
 	STEAM_CALLBACK(SteamMessagingMultiplayerPeer, on_game_created, LobbyGameCreated_t);
@@ -66,7 +67,7 @@ public:
 	Error join_lobby(uint64_t p_game_id);
 	void activate_invite_dialog();
 
-	/* NetworkedMultiplayerPeer */
+	// NetworkedMultiplayerPeer
 	void set_transfer_mode(TransferMode p_mode) override;
 	TransferMode get_transfer_mode() const override;
 	void set_target_peer(int p_peer_id) override;
@@ -77,7 +78,7 @@ public:
 	bool is_refusing_new_connections() const override;
 	ConnectionStatus get_connection_status() const override;
 
-	/* PacketPeer */
+	// PacketPeer
 	int get_available_packet_count() const override;
 	int get_max_packet_size() const override;
 	Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override;

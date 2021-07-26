@@ -1,5 +1,4 @@
 #include "steam_networking.h"
-#include "core/io/marshalls.h"
 
 SteamMessagingMultiplayerPeer::SteamMessagingMultiplayerPeer() :
 		_server(false),
