@@ -350,5 +350,5 @@ int SteamMessagingMultiplayerPeer::get_available_packet_count() const {
 }
 
 int SteamMessagingMultiplayerPeer::get_max_packet_size() const {
-	return std::numeric_limits<int>::max();
+	return std::numeric_limits<int>::max() - PROTO_SIZE;
 }
