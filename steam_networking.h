@@ -1,17 +1,12 @@
 #ifndef STEAM_NETWORKING_H
 #define STEAM_NETWORKING_H
 
-#include "core/reference.h"
 #include "core/io/networked_multiplayer_peer.h"
+#include "core/reference.h"
 #include "steam/steam_api.h"
-
-const int CHANNEL = 0;
-const int MESSAGE_LIMIT = 60;
 
 class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer);
-
-	const int PROTO_SIZE = sizeof(PacketType) + sizeof(uint32_t) + sizeof(int32_t);
 
 	enum PacketType {
 		DATA,
@@ -26,7 +21,10 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 		uint8_t *data;
 		int size;
 	};
-	
+
+	const int PROTO_SIZE = sizeof(PacketType) + sizeof(uint32_t) + sizeof(int32_t);
+	const int CHANNEL = 0;
+	const int MESSAGE_LIMIT = 60;
 	bool _server;
 	int32_t _target_peer;
 	uint32_t _peer_id;
@@ -35,9 +33,9 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	List<Packet> _packets;
 	bool _refuse_connections;
 	ConnectionStatus _connection_status;
-	CSteamID* _lobby_id;
+	CSteamID *_lobby_id;
 	SteamNetworkingMessage_t **_messages;
-	uint8_t* make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
+	uint8_t *make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
 	Packet make_internal_packet(const uint8_t *p_buffer, int p_buffer_size);
 
 	// Steam call results

@@ -8,7 +8,7 @@ SteamMessagingMultiplayerPeer::SteamMessagingMultiplayerPeer() :
 		_connection_status(CONNECTION_DISCONNECTED),
 		_lobby_id(nullptr),
 		_peer_id(0) {
-		_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t*) * MESSAGE_LIMIT);
+	_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t *) * MESSAGE_LIMIT);
 }
 
 SteamMessagingMultiplayerPeer::~SteamMessagingMultiplayerPeer() {
@@ -21,18 +21,18 @@ SteamMessagingMultiplayerPeer::~SteamMessagingMultiplayerPeer() {
  */
 void SteamMessagingMultiplayerPeer::activate_invite_dialog() {
 	if (_lobby_id == nullptr) {
-		WARN_PRINT("Attempting to open invite overlay without initializing lobby!");
+		WARN_PRINT("Attempting to open invite overlay without initializing lobby!")
 		return;
 	}
 
 	// Todo: Update invites to change for server/lobby
 	SteamFriends()->ActivateGameOverlayInviteDialog(*_lobby_id);
-};
+}
 
 /**
- * Builds buffer containing internal paramaters and Godot data 
+ * Builds buffer containing internal parameters and Godot data
  */
-uint8_t* SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
+uint8_t *SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
 	uint8_t *packet = (uint8_t *)memalloc(p_buffer_size + PROTO_SIZE);
 	memcpy(&packet[0], &p_type, sizeof(PacketType));
 	memcpy(&packet[sizeof(PacketType)], &p_source, sizeof(uint32_t));
@@ -42,7 +42,7 @@ uint8_t* SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, u
 }
 
 /**
- * Converts buffer into Packet structue
+ * Converts buffer into Packet structure
  */
 SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_internal_packet(const uint8_t *p_buffer, int p_buffer_size) {
 	Packet packet{};
@@ -60,7 +60,7 @@ SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_intern
  */
 void SteamMessagingMultiplayerPeer::create_lobby(LobbyPrivacy p_lobby_type, int p_max_players) {
 	if (SteamMatchmaking() == nullptr) {
-		ERR_PRINT("SteamAPI has not been initialized!");
+		ERR_PRINT("SteamAPI has not been initialized!")
 		return;
 	}
 
@@ -88,7 +88,7 @@ void SteamMessagingMultiplayerPeer::start_server() {
  */
 Error SteamMessagingMultiplayerPeer::join_lobby(uint64_t p_game_id) {
 	if (SteamMatchmaking() == nullptr) {
-		ERR_PRINT("SteamAPI has not been initialized!");
+		ERR_PRINT("SteamAPI has not been initialized!")
 		return ERR_CANT_ACQUIRE_RESOURCE;
 	}
 	_connection_status = CONNECTION_CONNECTING;
@@ -111,7 +111,6 @@ void SteamMessagingMultiplayerPeer::on_lobby_created(LobbyCreated_t *p_callback,
 		// Todo
 	}
 }
-
 
 /**
  * Called when Godot wants a packet
@@ -138,7 +137,7 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 		return ERR_UNAVAILABLE;
 	}
 
-	uint8_t* packet = make_network_packet(DATA, get_unique_id(), _target_peer, p_buffer, p_buffer_size);
+	uint8_t *packet = make_network_packet(DATA, get_unique_id(), _target_peer, p_buffer, p_buffer_size);
 	auto size = p_buffer_size + PROTO_SIZE;
 
 	int flags = 0;
@@ -231,10 +230,10 @@ void SteamMessagingMultiplayerPeer::poll() {
 					emit_signal("connected_to_server");
 
 					// Send ID to new peer
-					auto packet = make_network_packet(SYS_SET_ID, _peer_id, id, nullptr, 0);
-					SteamNetworkingMessages()->SendMessageToUser(_messages[i]->m_identityPeer, packet, PROTO_SIZE, k_nSteamNetworkingSend_Reliable, CHANNEL);
+					auto out_packet = make_network_packet(SYS_SET_ID, _peer_id, id, nullptr, 0);
+					SteamNetworkingMessages()->SendMessageToUser(_messages[i]->m_identityPeer, out_packet, PROTO_SIZE, k_nSteamNetworkingSend_Reliable, CHANNEL);
 				} else {
-					WARN_PRINT("GOT SIS_INIT FROM PLAYER?");
+					WARN_PRINT("GOT SIS_INIT FROM PLAYER?")
 				}
 			} break;
 		}
@@ -282,7 +281,7 @@ void SteamMessagingMultiplayerPeer::on_session_request(SteamNetworkingMessagesSe
  * Called when a server has been set for the lobby
  * Todo: Handle errors / unable to connect
  */
-void SteamMessagingMultiplayerPeer::on_game_created(LobbyGameCreated_t* p_callback) {
+void SteamMessagingMultiplayerPeer::on_game_created(LobbyGameCreated_t *p_callback) {
 	// Todo: check if steam id is actually set
 	if (!_server) {
 		auto packet = make_network_packet(SYS_INIT, 0, 1, nullptr, 0);
@@ -302,11 +301,10 @@ void SteamMessagingMultiplayerPeer::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("lobby_joined"));
 	ADD_SIGNAL(MethodInfo("lobby_updated"));
 
-	BIND_ENUM_CONSTANT(LobbyPrivacy::OPEN);
-	BIND_ENUM_CONSTANT(LobbyPrivacy::FRIENDS);
-	BIND_ENUM_CONSTANT(LobbyPrivacy::CLOSED);
+	BIND_ENUM_CONSTANT(LobbyPrivacy::OPEN)
+	BIND_ENUM_CONSTANT(LobbyPrivacy::FRIENDS)
+	BIND_ENUM_CONSTANT(LobbyPrivacy::CLOSED)
 }
-
 
 /////////////////////////
 /// Getters / Setters ///
