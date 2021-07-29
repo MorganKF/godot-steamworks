@@ -4,6 +4,7 @@
 #include "core/io/networked_multiplayer_peer.h"
 #include "core/reference.h"
 #include "steam/steam_api.h"
+#include "packet_buffer.h"
 
 class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer);
@@ -25,12 +26,13 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	const int PROTO_SIZE = sizeof(PacketType) + sizeof(uint32_t) + sizeof(int32_t);
 	const int CHANNEL = 0;
 	const int MESSAGE_LIMIT = 60;
+
 	bool _server;
 	int32_t _target_peer;
 	uint32_t _peer_id;
 	TransferMode _transfer_mode;
 	Map<int, SteamNetworkingIdentity> _peer_map;
-	List<Packet> _packets;
+	PacketBuffer<uint8_t> _packet_buffer;
 	bool _refuse_connections;
 	ConnectionStatus _connection_status;
 	CSteamID *_lobby_id;
@@ -84,6 +86,6 @@ public:
 	void poll() override;
 };
 
-VARIANT_ENUM_CAST(SteamMessagingMultiplayerPeer::LobbyPrivacy);
+VARIANT_ENUM_CAST(SteamMessagingMultiplayerPeer::LobbyPrivacy)
 
 #endif // STEAM_NETWORKING_H

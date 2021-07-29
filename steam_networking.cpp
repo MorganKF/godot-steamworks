@@ -117,14 +117,7 @@ void SteamMessagingMultiplayerPeer::on_lobby_created(LobbyCreated_t *p_callback,
  * Todo: Fix possible memory leak
  */
 Error SteamMessagingMultiplayerPeer::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
-	Packet packet = _packets.front()->get();
-	_packets.pop_front();
-
-	r_buffer_size = 0;
-
-	*r_buffer = packet.data;
-	r_buffer_size = packet.size;
-
+	_packet_buffer.get_packet((uint8_t **)r_buffer, r_buffer_size);
 	return OK;
 }
 
@@ -200,7 +193,7 @@ void SteamMessagingMultiplayerPeer::poll() {
 
 		switch (packet.type) {
 			case PacketType::DATA: {
-				_packets.push_back(packet); // Normal Godot packets
+				_packet_buffer.put_packet(packet.source, packet.destination, packet.data, packet.size);
 			} break;
 
 			// Used to set client unique ids
@@ -323,8 +316,8 @@ void SteamMessagingMultiplayerPeer::set_target_peer(int p_peer_id) {
 }
 
 int SteamMessagingMultiplayerPeer::get_packet_peer() const {
-	ERR_FAIL_COND_V(_packets.empty(), 1)
-	return _packets.front()->get().source;
+	ERR_FAIL_COND_V(_packet_buffer.is_empty(), 1)
+	_packet_buffer.get_from();
 }
 
 int SteamMessagingMultiplayerPeer::get_unique_id() const {
@@ -344,7 +337,7 @@ NetworkedMultiplayerPeer::ConnectionStatus SteamMessagingMultiplayerPeer::get_co
 }
 
 int SteamMessagingMultiplayerPeer::get_available_packet_count() const {
-	return _packets.size();
+	return _packet_buffer.size();
 }
 
 int SteamMessagingMultiplayerPeer::get_max_packet_size() const {
