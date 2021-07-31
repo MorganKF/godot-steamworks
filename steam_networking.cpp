@@ -111,7 +111,6 @@ void SteamMessagingMultiplayerPeer::on_lobby_created(LobbyCreated_t *p_callback,
 
 /**
  * Called when Godot wants a packet
- * Todo: Fix possible memory leak
  */
 Error SteamMessagingMultiplayerPeer::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
 	_packet_buffer.get_packet((uint8_t **)r_buffer, r_buffer_size);
@@ -153,6 +152,7 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 			}
 		} else if (_target_peer < 0) {
 			// Send to all excluding one
+			// Todo: We should probably exclude the server
 			for (auto element = _peer_map.front(); element; element = element->next()) {
 				if (element->key() != -_target_peer) {
 					SteamNetworkingMessages()->SendMessageToUser(element->value(), packet, size, flags, CHANNEL);
