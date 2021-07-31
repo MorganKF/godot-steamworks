@@ -3,8 +3,7 @@
 
 #include "steamworks.h"
 
-
-Steamworks* Steamworks::_singleton;
+Steamworks *Steamworks::_singleton;
 
 Steamworks::Steamworks() {
 	_singleton = this;
@@ -14,16 +13,16 @@ Steamworks::~Steamworks() {
 	SteamAPI_Shutdown();
 }
 
-Steamworks* Steamworks::get_singleton() {
+Steamworks *Steamworks::get_singleton() {
 	return _singleton;
 }
 
 void Steamworks::init(const int p_app_id) const {
-	#ifdef TOOLS_ENABLED
-		const std::string app_id = std::to_string(p_app_id);
-		_putenv_s("SteamAppId", app_id.c_str());
-		_putenv_s("SteamGameId", app_id.c_str());
-	#endif
+#ifdef TOOLS_ENABLED
+	const std::string app_id = std::to_string(p_app_id);
+	_putenv_s("SteamAppId", app_id.c_str());
+	_putenv_s("SteamGameId", app_id.c_str());
+#endif
 	SteamAPI_Init();
 }
 
