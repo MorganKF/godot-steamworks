@@ -192,10 +192,6 @@ void SteamMessagingMultiplayerPeer::poll() {
 		memcpy(&src, &data[sizeof(PacketType)], sizeof(uint32_t));
 		memcpy(&dest, &data[sizeof(PacketType) + sizeof(uint32_t)], sizeof(int32_t));
 
-		print_line(itos(type));
-		print_line(itos(src));
-		print_line(itos(dest));
-
 		switch (type) {
 			case PacketType::DATA: {
 				_packet_buffer.put_packet(src, dest, &data[PROTO_SIZE], size);
