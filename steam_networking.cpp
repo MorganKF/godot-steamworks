@@ -9,11 +9,16 @@ SteamMessagingMultiplayerPeer::SteamMessagingMultiplayerPeer() :
 		_lobby_id(nullptr),
 		_peer_id(0) {
 	_messages = (SteamNetworkingMessage_t **)memalloc(sizeof(SteamNetworkingMessage_t *) * MESSAGE_LIMIT);
+	_out_packet_size = pow(2, 8);
+	_out_packet = (uint8_t *)memalloc(_out_packet_size);
 }
 
 SteamMessagingMultiplayerPeer::~SteamMessagingMultiplayerPeer() {
-	memfree(_lobby_id);
+	if (_lobby_id != nullptr) {
+		memfree(_lobby_id);
+	}
 	memfree(_messages);
+	memfree(_out_packet);
 }
 
 /**
@@ -33,26 +38,18 @@ void SteamMessagingMultiplayerPeer::activate_invite_dialog() {
  * Builds buffer containing internal parameters and Godot data
  */
 uint8_t *SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size) {
-	uint8_t *packet = (uint8_t *)memalloc(p_buffer_size + PROTO_SIZE);
-	memcpy(&packet[0], &p_type, sizeof(PacketType));
-	memcpy(&packet[sizeof(PacketType)], &p_source, sizeof(uint32_t));
-	memcpy(&packet[sizeof(PacketType) + sizeof(uint32_t)], &p_destination, sizeof(int32_t));
-	memcpy(&packet[PROTO_SIZE], p_buffer, p_buffer_size);
-	return packet;
-}
-
-/**
- * Converts buffer into Packet structure
- */
-SteamMessagingMultiplayerPeer::Packet SteamMessagingMultiplayerPeer::make_internal_packet(const uint8_t *p_buffer, int p_buffer_size) {
-	Packet packet{};
-	packet.size = p_buffer_size;
-	packet.data = (uint8_t *)(memalloc(packet.size));
-	memcpy(&packet.type, &p_buffer[0], sizeof(PacketType));
-	memcpy(&packet.source, &p_buffer[sizeof(PacketType)], sizeof(uint32_t));
-	memcpy(&packet.destination, &p_buffer[sizeof(PacketType) + sizeof(uint32_t)], sizeof(int32_t));
-	memcpy(packet.data, &p_buffer[PROTO_SIZE], p_buffer_size);
-	return packet;
+	if (p_buffer_size + PROTO_SIZE > _out_packet_size) {
+		memfree(_out_packet);
+		while (p_buffer_size + PROTO_SIZE > _out_packet_size) {
+			_out_packet_size = next_power_of_2(_out_packet_size + 1);
+		}
+		_out_packet = (uint8_t *)memalloc(_out_packet_size);
+	}
+	memcpy(&_out_packet[0], &p_type, sizeof(PacketType));
+	memcpy(&_out_packet[sizeof(PacketType)], &p_source, sizeof(uint32_t));
+	memcpy(&_out_packet[sizeof(PacketType) + sizeof(uint32_t)], &p_destination, sizeof(int32_t));
+	memcpy(&_out_packet[PROTO_SIZE], p_buffer, p_buffer_size);
+	return _out_packet;
 }
 
 /**
@@ -130,8 +127,8 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
 		return ERR_UNAVAILABLE;
 	}
 
-	uint8_t *packet = make_network_packet(DATA, get_unique_id(), _target_peer, p_buffer, p_buffer_size);
 	auto size = p_buffer_size + PROTO_SIZE;
+	uint8_t *packet = make_network_packet(DATA, get_unique_id(), _target_peer, p_buffer, p_buffer_size);
 
 	int flags = 0;
 	switch (_transfer_mode) {
@@ -182,26 +179,34 @@ Error SteamMessagingMultiplayerPeer::put_packet(const uint8_t *p_buffer, int p_b
  * Todo: Do something with SendMessageToUser's return
  */
 void SteamMessagingMultiplayerPeer::poll() {
-	// Get lastest network messages
+	// Get latest network messages
 	int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(CHANNEL, _messages, MESSAGE_LIMIT);
 
 	for (auto i = 0; i < num_messages; i++) {
 		// Unpack message
-		const uint8_t *data = (uint8_t *)_messages[i]->m_pData;
-		int size = _messages[i]->m_cbSize;
-		auto packet = make_internal_packet(data, size - PROTO_SIZE);
+		PacketType type;
+		int src, dest;
+		int size = _messages[i]->m_cbSize - PROTO_SIZE;
+		uint8_t *data = (uint8_t *)_messages[i]->m_pData;
+		memcpy(&type, &data[0], sizeof(PacketType));
+		memcpy(&src, &data[sizeof(PacketType)], sizeof(uint32_t));
+		memcpy(&dest, &data[sizeof(PacketType) + sizeof(uint32_t)], sizeof(int32_t));
 
-		switch (packet.type) {
+		print_line(itos(type));
+		print_line(itos(src));
+		print_line(itos(dest));
+
+		switch (type) {
 			case PacketType::DATA: {
-				_packet_buffer.put_packet(packet.source, packet.destination, packet.data, packet.size);
+				_packet_buffer.put_packet(src, dest, &data[PROTO_SIZE], size);
 			} break;
 
 			// Used to set client unique ids
 			case PacketType::SYS_SET_ID: {
-				if (packet.source == 1) {
+				if (src == 1) {
 					emit_signal("connection_succeeded");
-					emit_signal("peer_connected", packet.destination);
-					_peer_id = packet.destination;
+					emit_signal("peer_connected", dest);
+					_peer_id = dest;
 					_connection_status = CONNECTION_CONNECTED;
 				}
 			} break;
@@ -293,10 +298,6 @@ void SteamMessagingMultiplayerPeer::_bind_methods() {
 
 	ADD_SIGNAL(MethodInfo("lobby_joined"));
 	ADD_SIGNAL(MethodInfo("lobby_updated"));
-
-	BIND_ENUM_CONSTANT(LobbyPrivacy::OPEN)
-	BIND_ENUM_CONSTANT(LobbyPrivacy::FRIENDS)
-	BIND_ENUM_CONSTANT(LobbyPrivacy::CLOSED)
 }
 
 /////////////////////////

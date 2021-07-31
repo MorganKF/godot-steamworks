@@ -32,6 +32,9 @@ void Steamworks::run_callbacks() const {
 }
 
 uint64_t Steamworks::get_steam_id() const {
+	if (SteamUser() == nullptr) {
+		return 0;
+	}
 	return SteamUser()->GetSteamID().ConvertToUint64();
 }
 

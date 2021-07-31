@@ -4,7 +4,7 @@
 #include "core/io/networked_multiplayer_peer.h"
 #include "core/reference.h"
 #include "steam/steam_api.h"
-#include "packet_buffer.h"
+#include "steam_packet_buffer.h"
 
 class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer);
@@ -32,13 +32,14 @@ class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
 	uint32_t _peer_id;
 	TransferMode _transfer_mode;
 	Map<int, SteamNetworkingIdentity> _peer_map;
-	PacketBuffer<uint8_t> _packet_buffer;
+	SteamPacketBuffer<uint8_t> _packet_buffer;
+	uint8_t *_out_packet;
+	int _out_packet_size;
 	bool _refuse_connections;
 	ConnectionStatus _connection_status;
 	CSteamID *_lobby_id;
 	SteamNetworkingMessage_t **_messages;
 	uint8_t *make_network_packet(PacketType p_type, uint32_t p_source, int32_t p_destination, const uint8_t *p_buffer, int p_buffer_size);
-	Packet make_internal_packet(const uint8_t *p_buffer, int p_buffer_size);
 
 	// Steam call results
 	void on_lobby_created(LobbyCreated_t *p_callback, bool p_io_failure);

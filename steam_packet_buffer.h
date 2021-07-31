@@ -5,23 +5,30 @@
 #include "core/ring_buffer.h"
 
 template <typename T>
-class PacketBuffer {
+class SteamPacketBuffer {
 public:
-	PacketBuffer() {
+	SteamPacketBuffer() {
 		_packet_buffer.resize(12);
 		_current_packet = (uint8_t *)memalloc(_max_packet_size);
 	};
 
-	~PacketBuffer() {
+	~SteamPacketBuffer() {
 		_packet_buffer.resize(0);
-		memfree(_current_packet);
+		if (_current_packet != nullptr) {
+			memfree(_current_packet);
+		}
 	};
 
 	void get_packet(T **r_buffer, int &r_buffer_size) {
+		if (_packets == 0) {
+			*r_buffer = nullptr;
+			r_buffer_size = 0;
+			return;
+		}
+
 		_packet_buffer.read((uint8_t *)&r_buffer_size, sizeof(int));
 
 		if (r_buffer_size > _max_packet_size) {
-			print_line("Resizing");
 			memfree(_current_packet);
 			while (r_buffer_size > _max_packet_size) {
 				_max_packet_size = next_power_of_2(_max_packet_size + 1);
@@ -37,7 +44,7 @@ public:
 	};
 
 	void put_packet(uint32_t from, int32_t to, T *p_buffer, int p_buffer_size) {
-		while(PROTO_SIZE + p_buffer_size > _packet_buffer.space_left()) {
+		while (PROTO_SIZE + p_buffer_size > _packet_buffer.space_left()) {
 			_packet_buffer.resize(next_power_of_2(_packet_buffer.size() + 1));
 		}
 
@@ -73,7 +80,7 @@ public:
 private:
 	const int PROTO_SIZE = sizeof(uint32_t) + sizeof(int32_t);
 	RingBuffer<uint8_t> _packet_buffer;
-	unsigned int _packets;
+	unsigned int _packets = 0;
 	uint32_t _next_from = 0;
 	int32_t _next_to = 0;
 	T *_current_packet;
