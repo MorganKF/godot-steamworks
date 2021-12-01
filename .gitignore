@@ -1,6 +1,3 @@
-
 sdk/
-
 __pycache__/
-
 *.obj
