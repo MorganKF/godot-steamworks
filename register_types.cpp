@@ -2,8 +2,8 @@
 
 #include "core/engine.h"
 #include "core/class_db.h"
-#include "steamworks.h"
-#include "steam_networking.h"
+#include "src/steamworks.h"
+#include "src/steam_networking.h"
 
 static Steamworks* godot_steamworks_ptr = nullptr;
 
