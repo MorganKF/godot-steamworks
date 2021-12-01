@@ -1,5 +1,5 @@
 # Godot Steamworks
-⚠️ This extension is still early in development and many features are experimental, undocumented, or simply missing. ⚠️
+⚠️ This extension is still early in development and many features are experimental, undocumented, or simply missing ⚠️
 
 Active development is currently on version 4 of Godot, new features may or may not be backported 
 in the future.
