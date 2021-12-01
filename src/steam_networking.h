@@ -1,13 +1,12 @@
 #ifndef STEAM_NETWORKING_H
 #define STEAM_NETWORKING_H
 
-#include "core/io/networked_multiplayer_peer.h"
-#include "core/reference.h"
+#include "core/io/multiplayer_peer.h"
 #include "steam/steam_api.h"
 #include "steam_packet_buffer.h"
 
-class SteamMessagingMultiplayerPeer : public NetworkedMultiplayerPeer {
-	GDCLASS(SteamMessagingMultiplayerPeer, NetworkedMultiplayerPeer);
+class SteamMessagingMultiplayerPeer : public MultiplayerPeer {
+	GDCLASS(SteamMessagingMultiplayerPeer, MultiplayerPeer);
 
 	enum PacketType {
 		DATA,

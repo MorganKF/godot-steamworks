@@ -1,21 +1,18 @@
 #include "register_types.h"
 
-#include "core/engine.h"
-#include "core/class_db.h"
 #include "src/steamworks.h"
 #include "src/steam_networking.h"
+#include "core/config/engine.h"
 
-static Steamworks* godot_steamworks_ptr = nullptr;
+static Steamworks *godot_steamworks_ptr = nullptr;
 
-void register_godot_steamworks_types() {
-	ClassDB::register_class<Steamworks>();
+void register_steamworks_types() {
+	GDREGISTER_CLASS(Steamworks);
 	godot_steamworks_ptr = memnew(Steamworks);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Steamworks", Steamworks::get_singleton()));
-
-	ClassDB::register_class<SteamMessagingMultiplayerPeer>();
+	GDREGISTER_VIRTUAL_CLASS(SteamMessagingMultiplayerPeer);
 }
 
-void unregister_godot_steamworks_types() {
+void unregister_steamworks_types() {
 	memdelete(godot_steamworks_ptr);
 }
-

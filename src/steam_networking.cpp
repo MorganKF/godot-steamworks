@@ -26,7 +26,7 @@ SteamMessagingMultiplayerPeer::~SteamMessagingMultiplayerPeer() {
  */
 void SteamMessagingMultiplayerPeer::activate_invite_dialog() {
 	if (_lobby_id == nullptr) {
-		WARN_PRINT("Attempting to open invite overlay without initializing lobby!")
+		WARN_PRINT("Attempting to open invite overlay without initializing lobby!");
 		return;
 	}
 
@@ -57,7 +57,7 @@ uint8_t *SteamMessagingMultiplayerPeer::make_network_packet(PacketType p_type, u
  */
 void SteamMessagingMultiplayerPeer::create_lobby(LobbyPrivacy p_lobby_type, int p_max_players) {
 	if (SteamMatchmaking() == nullptr) {
-		ERR_PRINT("SteamAPI has not been initialized!")
+		ERR_PRINT("SteamAPI has not been initialized!");
 		return;
 	}
 
@@ -85,7 +85,7 @@ void SteamMessagingMultiplayerPeer::start_server() {
  */
 Error SteamMessagingMultiplayerPeer::join_lobby(uint64_t p_game_id) {
 	if (SteamMatchmaking() == nullptr) {
-		ERR_PRINT("SteamAPI has not been initialized!")
+		ERR_PRINT("SteamAPI has not been initialized!");
 		return ERR_CANT_ACQUIRE_RESOURCE;
 	}
 	_connection_status = CONNECTION_CONNECTING;
@@ -227,7 +227,7 @@ void SteamMessagingMultiplayerPeer::poll() {
 					auto out_packet = make_network_packet(SYS_SET_ID, _peer_id, id, nullptr, 0);
 					SteamNetworkingMessages()->SendMessageToUser(_messages[i]->m_identityPeer, out_packet, PROTO_SIZE, k_nSteamNetworkingSend_Reliable, CHANNEL);
 				} else {
-					WARN_PRINT("GOT SIS_INIT FROM PLAYER?")
+					WARN_PRINT("GOT SIS_INIT FROM PLAYER?");
 				}
 			} break;
 		}
@@ -304,7 +304,7 @@ void SteamMessagingMultiplayerPeer::set_transfer_mode(TransferMode p_mode) {
 	_transfer_mode = p_mode;
 }
 
-NetworkedMultiplayerPeer::TransferMode SteamMessagingMultiplayerPeer::get_transfer_mode() const {
+MultiplayerPeer::TransferMode SteamMessagingMultiplayerPeer::get_transfer_mode() const {
 	return _transfer_mode;
 }
 
@@ -313,7 +313,7 @@ void SteamMessagingMultiplayerPeer::set_target_peer(int p_peer_id) {
 }
 
 int SteamMessagingMultiplayerPeer::get_packet_peer() const {
-	ERR_FAIL_COND_V(_packet_buffer.is_empty(), 1)
+	ERR_FAIL_COND_V(_packet_buffer.is_empty(), 1);
 	_packet_buffer.get_from();
 }
 
@@ -329,7 +329,7 @@ bool SteamMessagingMultiplayerPeer::is_refusing_new_connections() const {
 	return _refuse_connections;
 }
 
-NetworkedMultiplayerPeer::ConnectionStatus SteamMessagingMultiplayerPeer::get_connection_status() const {
+MultiplayerPeer::ConnectionStatus SteamMessagingMultiplayerPeer::get_connection_status() const {
 	return _connection_status;
 }
 

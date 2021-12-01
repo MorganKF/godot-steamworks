@@ -1,11 +1,11 @@
 #ifndef GODOT_STEAMWORKS_H
 #define GODOT_STEAMWORKS_H
 
-#include "core/reference.h"
+#include "core/object/ref_counted.h"
 #include "steam/steam_api.h"
 
-class Steamworks : public Reference {
-	GDCLASS(Steamworks, Reference);
+class Steamworks : public RefCounted {
+	GDCLASS(Steamworks, RefCounted);
 	STEAM_CALLBACK(Steamworks, on_join_request, GameLobbyJoinRequested_t);
 
 protected:

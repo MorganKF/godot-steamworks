@@ -1,8 +1,8 @@
 #ifndef STEAMWORKS_PACKET_BUFFER_H
 #define STEAMWORKS_PACKET_BUFFER_H
 
-#include "core/print_string.h"
-#include "core/ring_buffer.h"
+#include "core/string/print_string.h"
+#include "core/templates/ring_buffer.h"
 
 template <typename T>
 class SteamPacketBuffer {
