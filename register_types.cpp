@@ -7,10 +7,12 @@
 static Steamworks *godot_steamworks_ptr = nullptr;
 
 void register_steamworks_types() {
-	GDREGISTER_CLASS(Steamworks);
+	GDREGISTER_CLASS(Steamworks)
 	godot_steamworks_ptr = memnew(Steamworks);
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Steamworks", Steamworks::get_singleton()));
-	GDREGISTER_VIRTUAL_CLASS(SteamMessagingMultiplayerPeer);
+
+	// Todo: Update to new networking stack
+	//GDREGISTER_VIRTUAL_CLASS(SteamMessagingMultiplayerPeer)
 }
 
 void unregister_steamworks_types() {
