@@ -38,6 +38,7 @@ sdk/
 *.svclog
 *.scc
 *.nib
+*.idb
 
 # Cmake
 cmake-build-debug/
