@@ -38,7 +38,7 @@ uint64_t Steamworks::get_steam_id() const {
 }
 
 void Steamworks::on_join_request(GameLobbyJoinRequested_t *p_callback) {
-	emit_signal("join_request", p_callback->m_steamIDLobby.ConvertToUint64());
+	emit_signal("join_request", (uint64_t)p_callback->m_steamIDLobby.ConvertToUint64());
 }
 
 void Steamworks::_bind_methods() {
