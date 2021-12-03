@@ -1,4 +1,6 @@
-#pragma once
+#ifndef GODOT_STEAMWORKS_STEAMWORKS_H
+#define GODOT_STEAMWORKS_STEAMWORKS_H
+
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/core/binder_common.hpp>
 
@@ -16,3 +18,5 @@ public:
     Steamworks();
     ~Steamworks() override;
 };
+
+#endif // GODOT_STEAMWORKS_STEAMWORKS_H
