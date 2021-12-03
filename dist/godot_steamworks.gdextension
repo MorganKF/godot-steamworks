@@ -1,0 +1,5 @@
+[configuration]
+entry_symbol = "godot_steamworks_init"
+
+[libraries]
+windows.64.debug = "bin/GodotSteamworks.windows.debug.64.dll"
