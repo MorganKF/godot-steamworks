@@ -57,4 +57,4 @@ cmake-build-debug/
 /custom.py
 
 # Build output
-/bin
+/dist/bin
