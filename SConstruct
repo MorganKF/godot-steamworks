@@ -2,7 +2,7 @@
 import os
 import sys
 
-default_library_name = "GodotSteamworks"
+default_library_name = "godot_steamworks"
 default_target_path = "dist/bin/"
 
 steam_sdk_path = "./sdk/"
@@ -157,7 +157,8 @@ env.Append(LIBPATH=[cpp_bindings_path + "bin/"])
 env.Append(LIBS=[cpp_library])
 
 env.Append(CPPPATH=["src/"])
-sources = Glob("src/**/*.cpp")
+sources = Glob("src/*.cpp")
+sources += Glob("src/*/*.cpp")
 
 target_name = "{}.{}.{}.{}".format(env["target_name"], env["platform"], env["target"], arch_suffix)
 library = env.SharedLibrary(target=env["target_path"] + target_name, source=sources)
