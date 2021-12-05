@@ -15,8 +15,8 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_include_directories(
         ${PROJECT_NAME}
         PUBLIC
-        ../godot-cpp/include
-        ../godot-cpp/godot-headers
-        ../godot-cpp/gen/include
-        ./sdk/public
+        godot-cpp/include
+        godot-cpp/godot-headers
+        godot-cpp/gen/include
+        sdk/public
 )
