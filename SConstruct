@@ -5,9 +5,9 @@ import sys
 default_library_name = "godot_steamworks"
 default_target_path = "dist/bin/"
 
-steam_sdk_path = "./sdk/"
+steam_sdk_path = "sdk/"
 
-cpp_bindings_path = "../godot-cpp/"
+cpp_bindings_path = "godot-cpp/"
 godot_headers_path = cpp_bindings_path + "godot-headers/"
 cpp_library = "libgodot-cpp"
 
