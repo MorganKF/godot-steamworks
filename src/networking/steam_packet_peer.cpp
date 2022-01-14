@@ -14,7 +14,7 @@ int64_t SteamPacketPeer::_put_packet(const uint8_t *p_buffer, int64_t p_buffer_s
 }
 
 Error SteamPacketPeer::send(uint8_t p_channel, const uint8_t *p_buffer, int64_t p_buffer_size, int p_send_flags) {
-    SteamNetworkingMessages()->SendMessageToUser(_peer, p_buffer, p_buffer_size, p_send_flags, 0);
+    SteamNetworkingMessages()->SendMessageToUser(_peer, p_buffer, p_buffer_size, p_send_flags, p_channel);
 	return OK;
 }
 
