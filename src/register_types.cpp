@@ -2,7 +2,6 @@
 
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
@@ -27,13 +26,9 @@ void unregister_godot_steamworks_types() {
 	}
 }
 
-extern "C" {
-GDNativeBool GDN_EXPORT godot_steamworks_init(const GDNativeInterface *p_interface, const GDNativeExtensionClassLibraryPtr p_library, GDNativeInitialization *r_initialization) {
-	GDExtensionBinding::InitObject init_obj(p_interface, p_library, r_initialization);
-
+extern "C" GDNativeBool GDN_EXPORT godot_steamworks_init(const GDNativeInterface *p_interface, GDNativeExtensionClassLibraryPtr p_library, GDNativeInitialization *r_initialization) {
+    GDExtensionBinding::InitObject init_obj(p_interface, p_library, r_initialization);
 	init_obj.register_scene_initializer(register_godot_steamworks_types);
 	init_obj.register_scene_terminator(unregister_godot_steamworks_types);
-
 	return init_obj.init();
-}
 }
