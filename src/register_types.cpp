@@ -5,6 +5,7 @@
 #include <godot_cpp/godot.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#include "networking/steam_multiplayer_peer.hpp"
 #include "steamworks.hpp"
 
 using namespace godot;
@@ -13,6 +14,9 @@ Ref<Steamworks> steamworks_ref;
 
 void register_godot_steamworks_types() {
 	ClassDB::register_class<Steamworks>();
+	ClassDB::register_class<SteamPacketPeer>();
+	ClassDB::register_class<SteamMultiplayerPeer>();
+
 	Engine *engine = Engine::get_singleton();
 	ERR_FAIL_NULL(engine);
 

@@ -6,7 +6,7 @@
 
 using namespace godot;
 
-class Steamworks : public RefCounted{
+class Steamworks : public RefCounted {
 	GDCLASS(Steamworks, RefCounted);
 
 protected:
@@ -15,8 +15,8 @@ protected:
 public:
 	void init() const;
 	void run_callbacks() const;
-    Steamworks();
-    ~Steamworks() override;
+	Steamworks();
+	~Steamworks() override;
 };
 
 #endif // GODOT_STEAMWORKS_STEAMWORKS_H
