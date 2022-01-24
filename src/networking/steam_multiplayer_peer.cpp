@@ -63,7 +63,7 @@ int64_t SteamMultiplayerPeer::_get_available_packet_count() const {
 }
 
 int64_t SteamMultiplayerPeer::_get_max_packet_size() const {
-	return MultiplayerPeerExtension::_get_max_packet_size();
+	return 1 << 28;
 }
 
 void SteamMultiplayerPeer::_set_transfer_channel(int64_t p_channel) {
