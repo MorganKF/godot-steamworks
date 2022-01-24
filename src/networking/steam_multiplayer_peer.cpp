@@ -1,8 +1,17 @@
 #include "steam_multiplayer_peer.hpp"
 
 int64_t SteamMultiplayerPeer::_get_packet(const uint8_t **r_buffer, int32_t *r_buffer_size) {
-	*r_buffer_size = 0;
-	return ERR_UNAVAILABLE;
+    ERR_FAIL_COND_V_MSG(_incoming_packets.empty(), ERR_UNAVAILABLE, "No incoming packets available.");
+	if (!_current_packet.message) {
+        _current_packet.message->Release();
+	}
+
+	_current_packet = _incoming_packets.front();
+    _incoming_packets.pop();
+
+    *r_buffer_size = static_cast<int32_t>(_current_packet.message->GetSize()) - HEADER_SIZE;
+	*r_buffer = reinterpret_cast<const uint8_t *>(((uint8_t *)_current_packet.message->GetData())[HEADER_SIZE]);
+	return OK;
 }
 
 int64_t SteamMultiplayerPeer::_put_packet(const uint8_t *p_buffer, int64_t p_buffer_size) {

@@ -12,13 +12,16 @@ using namespace godot;
 
 class SteamMultiplayerPeer : public MultiplayerPeerExtension {
 	GDCLASS(SteamMultiplayerPeer, MultiplayerPeerExtension);
+	const uint32_t HEADER_SIZE = sizeof(Type) + sizeof(int64_t) * 2;
 
 private:
+	enum Type {
+		DATA,
+	};
 	struct Packet {
-		uint8_t *data = nullptr;
+		SteamNetworkingMessage_t *message = nullptr;
 		int64_t from = 0;
-		int64_t channel = 0;
-		uint32_t size = 0;
+		int64_t to = 0;
 	};
 
 	bool _server = false;
