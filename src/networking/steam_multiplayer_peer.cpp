@@ -23,18 +23,38 @@ int64_t SteamMultiplayerPeer::_poll() {
 	ERR_FAIL_COND_V_MSG(!_is_active(), ERR_UNAVAILABLE, "The multiplayer instance isn't currently active.");
 
 	if (_server)
-		_poll_server();
+		return _poll_server();
 	else
-		_poll_client();
-
-	return OK;
+		return _poll_client();
 }
 
 int64_t SteamMultiplayerPeer::_poll_client() {
+	int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(static_cast<int>(_channel), _messages, MESSAGE_LIMIT);
+
+	for (int i = 0; i < num_messages; i++) {
+		Type type;
+		int64_t src, dest;
+		uint8_t *data = (uint8_t *)_messages[i]->m_pData;
+		memcpy(&type, &data, sizeof(Type));
+		memcpy(&src, &data[sizeof(Type)], sizeof(int64_t));
+		memcpy(&dest, &data[sizeof(Type) + sizeof(int64_t)], sizeof(int64_t));
+
+		switch (type) {
+		case DATA: {
+			_incoming_packets.push(Packet{
+					_messages[i],
+					src,
+					dest,
+			});
+		} break;
+		}
+	}
+
 	return OK;
 }
 
 int64_t SteamMultiplayerPeer::_poll_server() {
+	int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(_channel, _messages, MESSAGE_LIMIT);
 	return OK;
 }
 
@@ -93,11 +113,14 @@ bool SteamMultiplayerPeer::_is_server() const {
 }
 
 bool SteamMultiplayerPeer::_is_active() const {
-    return _connection_status == CONNECTION_CONNECTED;
+	return _connection_status == CONNECTION_CONNECTED;
 }
 
 void SteamMultiplayerPeer::_bind_methods() {
 }
 
-SteamMultiplayerPeer::SteamMultiplayerPeer() = default;
+SteamMultiplayerPeer::SteamMultiplayerPeer() {
+	_messages = static_cast<SteamNetworkingMessage_t **>(Memory::alloc_static(sizeof(SteamNetworkingMessage_t *) * MESSAGE_LIMIT));
+}
+
 SteamMultiplayerPeer::~SteamMultiplayerPeer() = default;
