@@ -13,7 +13,7 @@ using namespace godot;
 class SteamMultiplayerPeer : public MultiplayerPeerExtension {
 	GDCLASS(SteamMultiplayerPeer, MultiplayerPeerExtension);
 	const int MESSAGE_LIMIT = 60;
-	const uint32_t HEADER_SIZE = sizeof(Type) + sizeof(int64_t) * 2;
+	const uint32_t HEADER_SIZE = sizeof(Type) + sizeof(int64_t) + sizeof (uint32_t);
 
 private:
 	enum Type {
@@ -33,15 +33,18 @@ private:
 	uint32_t _unique_id = 0;
 	int64_t _target_peer = 0;
 	int64_t _channel = 0;
-	int64_t _transfer_mode = 2;
+	TransferMode _transfer_mode = TRANSFER_MODE_RELIABLE;
 	ConnectionStatus _connection_status = CONNECTION_DISCONNECTED;
 	std::queue<Packet> _incoming_packets;
 	Packet _current_packet;
-	std::unordered_map<int, Ref<SteamPacketPeer>> _peers;
+	uint8_t *_out_packet;
+	size_t _out_packet_size;
+	std::unordered_map<uint32_t, Ref<SteamPacketPeer>> _peers;
 	SteamNetworkingMessage_t **_messages;
 
 	int64_t _poll_client();
 	int64_t _poll_server();
+    uint8_t *_make_packet(Type p_type, uint32_t p_source, int64_t p_destination, const uint8_t *p_buffer, int64_t p_buffer_size);
 
 protected:
 	static void _bind_methods();

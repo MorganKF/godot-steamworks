@@ -2,10 +2,7 @@
 
 int64_t SteamMultiplayerPeer::_get_packet(const uint8_t **r_buffer, int32_t *r_buffer_size) {
     ERR_FAIL_COND_V_MSG(_incoming_packets.empty(), ERR_UNAVAILABLE, "No incoming packets available.");
-	if (!_current_packet.message) {
-        _current_packet.message->Release();
-	}
-
+	if (!_current_packet.message) _current_packet.message->Release();
 	_current_packet = _incoming_packets.front();
     _incoming_packets.pop();
 
@@ -15,7 +12,61 @@ int64_t SteamMultiplayerPeer::_get_packet(const uint8_t **r_buffer, int32_t *r_b
 }
 
 int64_t SteamMultiplayerPeer::_put_packet(const uint8_t *p_buffer, int64_t p_buffer_size) {
-	return MultiplayerPeerExtension::_put_packet(p_buffer, p_buffer_size);
+    ERR_FAIL_COND_V_MSG(!SteamNetworkingMessages(), ERR_UNAVAILABLE, "Steamworks not initialized.");
+    ERR_FAIL_COND_V_MSG(!_is_active(), ERR_UNAVAILABLE, "The multiplayer instance isn't currently active.");
+
+	int64_t size = p_buffer_size + HEADER_SIZE;
+    uint8_t *packet = _make_packet(DATA, get_unique_id(), _target_peer, p_buffer, p_buffer_size);
+
+	int flags = 0;
+	switch (_transfer_mode) {
+        case TRANSFER_MODE_UNRELIABLE: {
+            flags = k_nSteamNetworkingSend_UnreliableNoDelay;
+        } break;
+        case TRANSFER_MODE_RELIABLE: {
+            flags = k_nSteamNetworkingSend_Reliable;
+        } break;
+        case TRANSFER_MODE_UNRELIABLE_ORDERED: {
+            flags = k_nSteamNetworkingSend_Unreliable;
+        }
+	}
+
+   if (_is_server()) {
+	   if (_target_peer == 1) return OK;
+	   else if (_target_peer == 0) {
+		   for (auto& peer: _peers) {
+			   peer.second->send(_channel, packet, size, flags);
+		   }
+	   }
+	   else if (_target_peer < 0) {
+		   auto exclude = -_target_peer;
+		   for (auto& peer : _peers) {
+			   if (peer.first == exclude) continue;
+			   peer.second->send(_channel, packet, size, flags);
+		   }
+	   } else {
+		   _peers.find(_target_peer)->second->send(_channel, packet, size, flags);
+	   }
+   } else {
+	   _peers.find(1)->second->send(_channel, packet, size, flags);
+   }
+
+	return OK;
+}
+
+uint8_t * SteamMultiplayerPeer::_make_packet(Type p_type, uint32_t p_source, int64_t p_destination, const uint8_t *p_buffer, int64_t p_buffer_size) {
+	if (p_buffer_size + HEADER_SIZE > _out_packet_size) {
+		::free(_out_packet);
+		while (p_buffer_size + HEADER_SIZE > _out_packet_size) {
+			_out_packet_size = godot::Math::next_power_of_2(_out_packet_size + 1);
+		}
+		_out_packet = static_cast<uint8_t *>(Memory::alloc_static(_out_packet_size));
+	}
+	memcpy(&_out_packet[0], &p_type, sizeof(Type));
+	memcpy(&_out_packet[sizeof(Type)], &p_source, sizeof(uint32_t));
+	memcpy(&_out_packet[sizeof(Type) + sizeof(int64_t)], &p_destination, sizeof(int64_t));
+	memcpy(&_out_packet[HEADER_SIZE], p_buffer, p_buffer_size);
+	return _out_packet;
 }
 
 int64_t SteamMultiplayerPeer::_poll() {
@@ -54,7 +105,7 @@ int64_t SteamMultiplayerPeer::_poll_client() {
 }
 
 int64_t SteamMultiplayerPeer::_poll_server() {
-	int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(_channel, _messages, MESSAGE_LIMIT);
+    int num_messages = SteamNetworkingMessages()->ReceiveMessagesOnChannel(static_cast<int>(_channel), _messages, MESSAGE_LIMIT);
 	return OK;
 }
 
@@ -75,7 +126,7 @@ int64_t SteamMultiplayerPeer::_get_transfer_channel() const {
 }
 
 void SteamMultiplayerPeer::_set_transfer_mode(int64_t p_mode) {
-	_transfer_mode = p_mode;
+	_transfer_mode = static_cast<TransferMode>(p_mode);
 }
 
 int64_t SteamMultiplayerPeer::_get_transfer_mode() const {
@@ -120,7 +171,9 @@ void SteamMultiplayerPeer::_bind_methods() {
 }
 
 SteamMultiplayerPeer::SteamMultiplayerPeer() {
-	_messages = static_cast<SteamNetworkingMessage_t **>(Memory::alloc_static(sizeof(SteamNetworkingMessage_t *) * MESSAGE_LIMIT));
+	_out_packet_size = pow(2, 8);
+    _out_packet = static_cast<uint8_t *>(Memory::alloc_static(_out_packet_size));
+    _messages = static_cast<SteamNetworkingMessage_t **>(Memory::alloc_static(sizeof(SteamNetworkingMessage_t *) * MESSAGE_LIMIT));
 }
 
 SteamMultiplayerPeer::~SteamMultiplayerPeer() = default;
