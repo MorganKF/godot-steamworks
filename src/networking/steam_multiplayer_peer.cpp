@@ -196,4 +196,7 @@ SteamMultiplayerPeer::SteamMultiplayerPeer() {
     _messages = static_cast<SteamNetworkingMessage_t **>(Memory::alloc_static(sizeof(SteamNetworkingMessage_t *) * MESSAGE_LIMIT));
 }
 
-SteamMultiplayerPeer::~SteamMultiplayerPeer() = default;
+SteamMultiplayerPeer::~SteamMultiplayerPeer() {
+	::free(_out_packet);
+	::free(_messages);
+}
