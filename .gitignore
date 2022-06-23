@@ -41,6 +41,10 @@ cmake-build-debug/
 # Jetbrains IDEs
 .idea/
 
+# clangd
+.cache
+compile_commands.json
+
 # VS code
 .vscode/
 .vs/
