@@ -8,11 +8,6 @@ env.Append(COMPILATIONDB_USE_ABSPATH=True)
 env.Tool('compilation_db')
 Alias('compiledb', env.CompilationDatabase('compile_commands.json'))
 
-default_library_name = "godot_steamworks"
-default_target_path = "dist/bin/"
-steam_sdk_path = "sdk/"
-
-# Check our platform specifics
 if env["platform"] == "osx":
     env.Append(LIBS=["steam_api"])
     env.Append(LIBPATH=[steam_sdk_path + "redistributable_bin/osx"])
@@ -24,9 +19,7 @@ elif env["platform"] == "windows":
     env.Append(LIBS=["steam_api64"])
     env.Append(LIBPATH=[steam_sdk_path + "redistributable_bin/win64"])
 
-# make sure our binding library is properly includes
-env.Append(CPPPATH=[steam_sdk_path + "/public"])
-
+env.Append(CPPPATH=["sdk/public"])
 env.Append(CPPPATH=["src/"])
 sources = Glob("src/*.cpp")
 sources += Glob("src/*/*.cpp")
