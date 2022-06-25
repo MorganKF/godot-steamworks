@@ -10,14 +10,14 @@ Alias('compiledb', env.CompilationDatabase('compile_commands.json'))
 
 if env["platform"] == "osx":
     env.Append(LIBS=["steam_api"])
-    env.Append(LIBPATH=[steam_sdk_path + "redistributable_bin/osx"])
+    env.Append(LIBPATH=["sdk/redistributable_bin/osx"])
 
 elif env["platform"] in ("x11", "linux", "server"):
     env.Append(LIBS=["steam_api"])
-    env.Append(LIBPATH=[steam_sdk_path + "redistributable_bin/linux64"])
+    env.Append(LIBPATH=["sdk/redistributable_bin/linux64"])
 elif env["platform"] == "windows":
     env.Append(LIBS=["steam_api64"])
-    env.Append(LIBPATH=[steam_sdk_path + "redistributable_bin/win64"])
+    env.Append(LIBPATH=["sdk/redistributable_bin/win64"])
 
 env.Append(CPPPATH=["sdk/public"])
 env.Append(CPPPATH=["src/"])
