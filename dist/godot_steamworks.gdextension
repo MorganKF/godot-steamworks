@@ -2,4 +2,4 @@
 entry_symbol = "godot_steamworks_init"
 
 [libraries]
-windows.64 = "bin/godot_steamworks.windows.debug.64.dll"
+windows.debug.x86_64 = "bin/godot_steamworks.windows.debug.x86_64.dll"
