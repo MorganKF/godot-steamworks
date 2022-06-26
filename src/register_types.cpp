@@ -1,5 +1,6 @@
 #include "register_types.hpp"
 
+#include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/classes/engine.hpp>
 
 #include "networking/steam_multiplayer_peer.hpp"
@@ -28,6 +29,7 @@ void unregister_godot_steamworks_types(ModuleInitializationLevel p_level) {
 		return;
 	}
 	if (steamworks_ref.is_valid()) {
+        Engine::get_singleton()->unregister_singleton("Steamworks");
 		steamworks_ref.unref();
 	}
 }
